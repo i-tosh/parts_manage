@@ -12,7 +12,7 @@ with tab1:
     st.header("受注")
 
 
-    df = pd.read_csv("data.csv")
+    df = pd.read_csv("統合テーブル(納品日に減算).csv")
 
     parts_no = df["製品番号"].unique().tolist()
 
