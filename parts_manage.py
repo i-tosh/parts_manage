@@ -4,6 +4,17 @@ import numpy as np
 import pandas as pd
 import datetime
 
+#右上のメニューを非表示
+st.markdown("""
+<style>
+#MainMenu {visibility: hidden;}
+.stDeployButton {display:none;}
+footer {visibility: hidden;}
+#stDecoration {display:none;}
+.reportview-container {margin-top: -2em;}
+</style>
+""", unsafe_allow_html=True)
+
 st.title("製品管理システム")
 
 tab1, tab2, tab3 = st.tabs(["受注", "発注","棚卸"])
