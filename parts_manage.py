@@ -7,7 +7,7 @@ import datetime
 #デプロイボタンを非表示
 st.markdown("""
 <style>
-.stDeployButton {
+.stAppDeployButton {
     visibility: hidden;
 }
 </style>
