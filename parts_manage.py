@@ -4,6 +4,15 @@ import numpy as np
 import pandas as pd
 import datetime
 
+#デプロイボタンを非表示
+st.markdown("""
+<style>
+.stDeployButton {
+    visibility: hidden;
+}
+</style>
+""", unsafe_allow_html=True)
+
 #右上のメニューを非表示
 st.markdown("""
 <style>
