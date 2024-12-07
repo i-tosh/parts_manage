@@ -49,6 +49,5 @@ with tab1:
 with tab2:
     st.header("発注")
 
-
 with tab3:
     st.header("棚卸")
