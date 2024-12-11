@@ -33,7 +33,7 @@ st.title("製品管理システム")
 
 # セッション状態の初期化
 if 'df1' not in st.session_state:
-    st.session_state.df1 = pd.read_csv("統合テーブル (予定の納期に減算).csv")
+    st.session_state.df1 = pd.read_csv("統合テーブル(予定の納期に減算).csv")
 
 if 'df3' not in st.session_state:
     st.session_state.df3 = pd.read_csv("統合テーブル(納品日に減算).csv")
