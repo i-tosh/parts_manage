@@ -66,8 +66,10 @@ with tab1:
 
     zai = st.session_state.df1[(st.session_state.df1['製品番号'] == select) & (st.session_state.df1['日付']==day)]['在庫数'].iat[0]
     st.write('現在の在庫数:',zai)
+    #st.markdown(f'<h3 style="font-size: 20px;">現在の在庫数: {zai}</h3>', unsafe_allow_html=True)
+    
 
-    number = st.number_input('注文数を入力してください',step=1)
+    number = st.number_input('注文数を入力してください',step=1, min_value= 1, format = "%d")
     #st.write('注文数: ', number)
 
     if(number != 0):
@@ -119,7 +121,7 @@ with tab2:
     zaiko2 = zaiko2.reset_index(drop=True)
     st.divider()
     st.write('発注すべき製品を赤字表示しています。また発注管理欄は1となっているので発注が必要なものを素早く確認する際には発注管理欄の並びを変えて下さい')
-    st.divider()
+    #st.divider()
     zaiko2['発注管理'] = 0
     #発注が必要な場合は発注管理を1にする
     zaiko2.loc[zaiko2['在庫数'] <= zaiko2['発注点'], '発注管理'] = 1
@@ -146,14 +148,8 @@ with tab3:
 
     parts_no3 = st.session_state.df3["製品番号"].unique().tolist()
     select = st.selectbox("製品番号", parts_no3, key="selectbox_tab3")
-    st.write('選択された製品は',select)
+#    st.write('選択された製品は',select)
 
-    st.caption('本来は今日の日付を自動認識')
-    d = st.date_input(
-        "本日の日付を入力してください",
-        datetime.date(2021, 1, 1))
-    day = d.strftime('%Y-%m-%d')
-    #st.write('本日は', day)
 
     zaiko =st.session_state.df3[st.session_state.df3['製品番号']==select ][['日付','在庫数']]
     idx2 = zaiko[zaiko['日付']==day].index[0]   #棚卸の結果はidx2に上書きする
