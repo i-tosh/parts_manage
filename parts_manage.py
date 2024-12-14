@@ -26,10 +26,6 @@ footer {visibility: hidden;}
 
 st.title("製品管理システム")
 
-# CSVからDataFrameを読み込む
-#@st.cache_data
-#def load_data(file):
-#    return pd.read_csv(file)
 
 # セッション状態の初期化
 if 'df1' not in st.session_state:
@@ -37,7 +33,10 @@ if 'df1' not in st.session_state:
 
 if 'df3' not in st.session_state:
     st.session_state.df3 = pd.read_csv("統合テーブル(納品日に減算).csv")
-    st.session_state.df3['棚卸フラグ'] = 0
+#    st.session_state.df3['棚卸フラグ'] = 0
+
+if 'toroshi' not in st.session_state:
+    st.session_state.toroshi = pd.read_csv("棚卸管理.csv")
 
 tab1, tab2, tab3 = st.tabs(["納期確認", "発注","棚卸"])
 
@@ -147,7 +146,7 @@ with tab3:
 
     parts_no3 = st.session_state.df3["製品番号"].unique().tolist()
     select = st.selectbox("製品番号", parts_no3, key="selectbox_tab3")
-    #st.write('選択された製品は',select)
+    st.write('選択された製品は',select)
 
     st.caption('本来は今日の日付を自動認識')
     d = st.date_input(
@@ -160,8 +159,26 @@ with tab3:
     idx2 = zaiko[zaiko['日付']==day].index[0]   #棚卸の結果はidx2に上書きする
     zai = st.session_state.df3[(st.session_state.df3['製品番号'] == select) & (st.session_state.df3['日付']==day)]['在庫数'].iat[0]
 
-    number = st.number_input("修正個数", min_value=0, value=zai, format="%d")
-    #st.write("idx2=",idx2)
+#    number = st.number_input("修正個数", min_value=0, value=zai, format="%d")
+#    number = st.number_input("修正個数(Enterで確定)",  value=zai, format="%d")
+#    st.write("idx2=",idx2)
+    
+    num = st.text_input('個数修正しない場合も棚卸ボタンをクリックしてください(棚卸ボタンで確定)', zai)
+    try:
+        number_dummy = int(num)
+    except:
+        st.error("整数を入力してください")
+        number_dummy = zai
+    
+    if st.button('棚卸'):
+        number = number_dummy
+#        st.session_state.toroshi[st.session_state.toroshi['製品番号']==select ]['棚卸']=1
+        idx_tana = st.session_state.toroshi[st.session_state.toroshi['製品番号']==select ].index[0]   #棚卸の結果はidx_tanaに上書きする
+        st.session_state.toroshi.iat[idx_tana,1]=1
+    else:
+        number = zai
+
+        
     #st.write("tana=",st.session_state.df3.loc[idx2].to_frame().T)
     if number != zai:   #棚卸の実行
         ##tana =st.session_state.df3.loc[idx2].to_frame().T
@@ -173,13 +190,18 @@ with tab3:
             st.session_state.df3.at[idx2,'調整出庫'] = zai -number
         
         zaiko =zaiko.reset_index(drop=True)
-        idx3 = zaiko[zaiko['日付']==day].index[0]   #idx3は直下の再計算範囲算出のみに使用
+        #idx3 = zaiko[zaiko['日付']==day].index[0]   #idx3は直下の再計算範囲算出のみに使用
+        tmp = zaiko.reset_index(drop=True)
+        idx3 = tmp[tmp['日付']==day].index[0]
+
         calc_area = len(zaiko[idx3:])          #再計算する範囲
         endidx = idx2+calc_area
+#        st.write(zaiko)
         
         #df1内の在庫数再計算
         zaiko =st.session_state.df1[st.session_state.df1['製品番号']==select ][['日付','在庫数']]
-        idx21 = zaiko[zaiko['日付']==day].index[0]   #棚卸の結果はidx21に上書きする
+        idx21 = zaiko[zaiko['日付']==day].index[0]   #棚卸の結果はdf1のidx21に上書きする
+#       st.write("idx21=",idx21)
         zai = st.session_state.df1[(st.session_state.df1['製品番号'] == select) & (st.session_state.df1['日付']==day)]['在庫数'].iat[0]
 #        st.write("DF1のzai=",zai)
         if number > zai: #調整入庫
@@ -187,34 +209,67 @@ with tab3:
         else: #調整出庫
             st.session_state.df1.at[idx21,'調整出庫'] = zai -number
 
-        idx31 = zaiko[zaiko['日付']==day].index[0]   #idx3は直下の再計算範囲算出のみに使用
+        #idx31 = zaiko[zaiko['日付']==day].index[0]   #idx3は直下の再計算範囲算出のみに使用
+        tmp = zaiko.reset_index(drop=True)
+        idx31 = tmp[tmp['日付']==day].index[0]
+#        st.write("idx31=",idx31)
+#        st.write("zaiko1")
+#        st.write(zaiko[idx31:])
+        
         calc_area = len(zaiko[idx31:])          #再計算する範囲
-        endidx1 = idx2+calc_area
+        endidx1 = idx21+calc_area
         for i in range(idx21, endidx1):
-            st.session_state.df1.loc[i,'在庫数'] = (
-                st.session_state.df1.loc[i-1,'在庫数'] 
-                + st.session_state.df1.loc[i,'通常入庫'] 
-                + st.session_state.df1.loc[i,'調整入庫'] 
-                - st.session_state.df1.loc[i,'調整出庫'] 
-                - st.session_state.df1.loc[i,'受注本数']
-            )
-
+            if st.session_state.df1.loc[i,'日付'] != "2021-01-01":
+                st.session_state.df1.loc[i,'在庫数'] = (
+                    st.session_state.df1.loc[i-1,'在庫数'] 
+                    + st.session_state.df1.loc[i,'通常入庫'] 
+                    + st.session_state.df1.loc[i,'調整入庫'] 
+                    - st.session_state.df1.loc[i,'調整出庫'] 
+                    - st.session_state.df1.loc[i,'受注本数']
+                )
+            else:   #2021-01-01の例外処理
+                st.session_state.df1.loc[i,'在庫数'] = (
+                    st.session_state.df1.loc[i,'在庫数'] 
+#                    + st.session_state.df1.loc[i,'通常入庫'] 
+                    + st.session_state.df1.loc[i,'調整入庫'] 
+                    - st.session_state.df1.loc[i,'調整出庫'] 
+#                    - st.session_state.df1.loc[i,'受注本数']
+                )
+                
+        #st.write(st.session_state.df1[idx21-5:idx21+5])
         
         #df3内の在庫数再計算
         for i in range(idx2, endidx):
-            st.session_state.df3.loc[i,'在庫数'] = (
-                st.session_state.df3.loc[i-1,'在庫数'] 
-                + st.session_state.df3.loc[i,'通常入庫'] 
-                + st.session_state.df3.loc[i,'調整入庫'] 
-                - st.session_state.df3.loc[i,'調整出庫'] 
-                - st.session_state.df3.loc[i,'納品本数']
-            )
+            if st.session_state.df3.loc[i,'日付'] != "2021-01-01":
+                st.session_state.df3.loc[i,'在庫数'] = (
+                    st.session_state.df3.loc[i-1,'在庫数'] 
+                    + st.session_state.df3.loc[i,'通常入庫'] 
+                    + st.session_state.df3.loc[i,'調整入庫'] 
+                    - st.session_state.df3.loc[i,'調整出庫'] 
+                    - st.session_state.df3.loc[i,'納品本数']
+                )
+            else:   #2021-01-01の例外処理
+                st.session_state.df3.loc[i,'在庫数'] = (
+                    st.session_state.df3.loc[i,'在庫数'] 
+#                    + st.session_state.df3.loc[i,'通常入庫'] 
+                    + st.session_state.df3.loc[i,'調整入庫'] 
+                    - st.session_state.df3.loc[i,'調整出庫'] 
+#                    - st.session_state.df3.loc[i,'納品本数']
+                )
+
             
 #        st.write(st.session_state.df1[idx21-5:idx21+5])
 #        st.write("calc_area=",calc_area)
 #        st.write(st.session_state.df1[endidx1-5:endidx1+5])
 
-    zai = number
-    st.write('現在の在庫数:',zai)
+#        st.write(st.session_state.df3[idx2-5:idx2+5])
+#        st.write("calc_area=",calc_area)
+#        st.write(st.session_state.df3[endidx-5:endidx+5])
+
+
+    
+    with st.expander("棚卸完了状況"):
+        st.write('棚卸が完了した製品は棚卸欄が１になっています。棚卸未完了の製品を素早く確認する際には棚卸欄の並びを変えて下さい')
+        st.dataframe(st.session_state.toroshi, width=200, hide_index = True)
 
 
