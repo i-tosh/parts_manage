@@ -145,6 +145,11 @@ with tab3:
 #    def calc_zaiko(df,stidx,endidx):
         #指定されたインデックス間で入出庫データに基づき在庫数の再計算を行う
         
+    st.caption('本来は今日の日付を自動認識')
+    d3 = st.date_input(
+        "本日の日付を入力してください",
+        datetime.date(2021, 1, 1))
+    day = d3.strftime('%Y-%m-%d')
 
     parts_no3 = st.session_state.df3["製品番号"].unique().tolist()
     select = st.selectbox("製品番号", parts_no3, key="selectbox_tab3")
